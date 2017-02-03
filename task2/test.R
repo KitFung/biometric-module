@@ -28,6 +28,7 @@ differentialExpressedGene <- function(countTable, condition) {
   cds <- estimateSizeFactors( cds )
   cds <- estimateDispersions( cds )
   res <- nbinomTest( cds, "condA", "condB" )
+  rownames(res) <- rownames(countTable)
   resSig <- res[ res$padj < 0.1, ]
   goodRow <- resSig[complete.cases(resSig), ]
   geneSig <- rownames(goodRow)
@@ -43,4 +44,4 @@ differentialExpressedGene <- function(countTable, condition) {
 
 #
 diffRes = differentialExpressedGene(countTable, condition)
-head( dres$res[ order(dres$res$pval), ] )
+write.csv(diffRes$geneSig, file = "diffRes.csv")

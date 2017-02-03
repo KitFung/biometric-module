@@ -1,0 +1,171 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of GRNInferenceEvaluation</title>
+  <meta name="keywords" content="GRNInferenceEvaluation">
+  <meta name="description" content="DREAM5-like accuracy evaluation. Returns accuracy statistics given a">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">eval_tigress</a> &gt; GRNInferenceEvaluation.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for eval_tigress&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>GRNInferenceEvaluation
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>DREAM5-like accuracy evaluation. Returns accuracy statistics given a</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [TPR FPR PREC REC L AUROC AUPR P_AUROC P_AUPR] = GRNInferenceEvaluation(gold_positives, prediction_raw, pdf_aupr, pdf_auroc) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> DREAM5-like accuracy evaluation. Returns accuracy statistics given a
+ prediction matrix prediction_raw, as obtained by, e.g. predict_network.m.
+ This function and dependent function are based on DREAM5 evaluation
+ functions written by G. Stolovitsky and R. Prill.
+
+ See also predict_network, <a href="sparseGS.html" class="code" title="function [G gold_complete] = sparseGS(gold_positives)">sparseGS</a>, <a href="remove_unknown_edges.html" class="code" title="function prediction_cleaned = remove_unknown_edges(prediction,G)">remove_unknown_edges</a>, <a href="probability.html" class="code" title="function P = probability(X,Y,x)">probability</a>, <a href="edgelist2sparse.html" class="code" title="function A = edgelist2sparse(E)">edgelist2sparse</a>
+
+ Anne-Claire Haury, 2012</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="probability.html" class="code" title="function P = probability(X,Y,x)">probability</a>	Computes p-value of x under distribution of X : P(X>=x).</li><li><a href="remove_unknown_edges.html" class="code" title="function prediction_cleaned = remove_unknown_edges(prediction,G)">remove_unknown_edges</a>	prediction_cleaned = remove_unknown_edges(prediction,G) removes predicted</li><li><a href="sparseGS.html" class="code" title="function [G gold_complete] = sparseGS(gold_positives)">sparseGS</a>	G = sparseGS(gold_positives) returns a sparse adjacency-like matrix given</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="../run_tigress/demo_tigress.html" class="code" title="">demo_tigress</a>	Demo for TIGRESS</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [TPR FPR PREC REC L AUROC AUPR P_AUROC P_AUPR] = GRNInferenceEvaluation(gold_positives, prediction_raw, pdf_aupr, pdf_auroc)</a>
+0002 
+0003 
+0004 <span class="comment">% DREAM5-like accuracy evaluation. Returns accuracy statistics given a</span>
+0005 <span class="comment">% prediction matrix prediction_raw, as obtained by, e.g. predict_network.m.</span>
+0006 <span class="comment">% This function and dependent function are based on DREAM5 evaluation</span>
+0007 <span class="comment">% functions written by G. Stolovitsky and R. Prill.</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% See also predict_network, sparseGS, remove_unknown_edges, probability, edgelist2sparse</span>
+0010 <span class="comment">%</span>
+0011 <span class="comment">% Anne-Claire Haury, 2012</span>
+0012 
+0013 
+0014 <span class="comment">%% preprocess gold standard to get graphs G and H</span>
+0015 idx = gold_positives(:,3);
+0016 gold_positives = gold_positives(logical(idx),:);        <span class="comment">%% make sure they are really positives</span>
+0017 G = <a href="sparseGS.html" class="code" title="function [G gold_complete] = sparseGS(gold_positives)">sparseGS</a>(gold_positives);
+0018 H = G&gt;0;    <span class="comment">%% just the positives</span>
+0019 
+0020 <span class="comment">%% total, positive, negative</span>
+0021 P = full(sum(sum(G&gt;0)));
+0022 N = full(sum(sum(G&lt;0)));
+0023 T = P + N;
+0024 
+0025 <span class="comment">%% preprocess prediction so only contains edges in the gold standard</span>
+0026 prediction = <a href="remove_unknown_edges.html" class="code" title="function prediction_cleaned = remove_unknown_edges(prediction,G)">remove_unknown_edges</a>(prediction_raw,G);
+0027 L = size(prediction,1);
+0028 
+0029 <span class="comment">%% create the &quot;discovery&quot; vector, the order with which positves are discovered</span>
+0030 I = prediction(:,1);
+0031 J = prediction(:,2);
+0032 discovery=sub2ind(size(H),I,J);
+0033 isGS=find(H(:));
+0034 discovery=ismember(discovery,isGS);
+0035 
+0036 
+0037 <span class="comment">%% number of positives discovered in the prediction list of length L</span>
+0038 TPL = sum(discovery);
+0039 
+0040 <span class="comment">%% p = the number of remaining positives / number of remaining list entries.</span>
+0041 <span class="comment">%% p is the uniform probablility of picking a positive by guessing.</span>
+0042 <span class="keyword">if</span> L &lt; T
+0043     p = (P - TPL) / (T - L);
+0044 <span class="keyword">else</span>
+0045     p = 0;    <span class="comment">%% they were all already found</span>
+0046 <span class="keyword">end</span>
+0047 
+0048 <span class="comment">%% p is also the fractional number of positives discovered per guess,</span>
+0049 random_positive_discovery = repmat(p, T-L, 1);
+0050 random_negative_discovery = repmat(1-p, T-L, 1);
+0051 
+0052 <span class="comment">%% &quot;complete&quot; the discovery vectors</span>
+0053 positive_discovery = [  discovery ; random_positive_discovery ];
+0054 negative_discovery = [ ~discovery ; random_negative_discovery ];
+0055 
+0056 <span class="comment">%% true positives (false positives) at depth k</span>
+0057 TPk = cumsum(positive_discovery);
+0058 FPk = cumsum(negative_discovery);
+0059 
+0060 K = (1:T)';
+0061 <span class="comment">%% sanity check</span>
+0062 <span class="keyword">if</span> ( (P ~= round(TPk(end))) || (N ~= round(FPk(end))) )
+0063     disp(<span class="string">'ERROR. There is a problem with the completion of the prediction list.'</span>)
+0064 <span class="keyword">end</span>
+0065 
+0066 <span class="comment">%% finishing touch</span>
+0067 TPk(end) = round(TPk(end));
+0068 FPk(end) = round(FPk(end));
+0069 <span class="comment">%% metrics</span>
+0070 TPR = TPk / P;
+0071 FPR = FPk / N;
+0072 REC = TPR;  <span class="comment">%% same thing</span>
+0073 PREC = TPk ./ K;
+0074 
+0075 <span class="comment">%% faster built-in integration function</span>
+0076 AUROC = trapz(FPR,TPR);
+0077 AUPR = trapz(REC,PREC) / (1-1/P);    <span class="comment">%% normalized by max possible value.</span>
+0078 
+0079 
+0080 <span class="comment">%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0081 <span class="comment">%% calcaulate p-values for these metrics</span>
+0082 <span class="keyword">if</span> nargin==4
+0083     X = pdf_aupr.X;
+0084     Y = pdf_aupr.Y;
+0085     P_AUPR = <a href="probability.html" class="code" title="function P = probability(X,Y,x)">probability</a>(X, Y, AUPR);
+0086 
+0087     X = pdf_auroc.X;
+0088     Y = pdf_auroc.Y;
+0089     P_AUROC = <a href="probability.html" class="code" title="function P = probability(X,Y,x)">probability</a>(X, Y, AUROC);
+0090 <span class="keyword">end</span>
+0091 
+0092 <span class="comment">%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%</span>
+0093 <span class="comment">%figure(1); clf</span>
+0094 <span class="comment">%pn = 2;</span>
+0095 <span class="comment">%pm = 2;</span>
+0096 <span class="comment">%pj = 0;</span>
+0097 <span class="comment">%</span>
+0098 <span class="comment">%pj = pj + 1; subplot(pn,pm,pj)</span>
+0099 <span class="comment">%plot(FPR(1:L),TPR(1:L),'r')</span>
+0100 <span class="comment">%hold on</span>
+0101 <span class="comment">%plot(FPR(L+1:end),TPR(L+1:end),'b')</span>
+0102 <span class="comment">%hold off</span>
+0103 <span class="comment">%xlabel('FPR')</span>
+0104 <span class="comment">%ylabel('TPR')</span>
+0105 <span class="comment">%hold on</span>
+0106 <span class="comment">%plot([0,1],[0,1],'k--')  %% diagonal</span>
+0107 <span class="comment">%hold off</span>
+0108 <span class="comment">%axis([0,1,0,1])</span>
+0109 <span class="comment">%</span>
+0110 <span class="comment">%pj = pj + 1; subplot(pn,pm,pj)</span>
+0111 <span class="comment">%plot(REC(1:L),PREC(1:L),'r')</span>
+0112 <span class="comment">%hold on</span>
+0113 <span class="comment">%plot(REC(L+1:end),PREC(L+1:end),'b')</span>
+0114 <span class="comment">%hold off</span>
+0115 <span class="comment">%xlabel('Recall')</span>
+0116 <span class="comment">%ylabel('Precision')</span>
+0117 <span class="comment">%axis([0,1,0,1])</span></pre></div>
+<hr><address>Generated on Mon 24-Sep-2012 22:50:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

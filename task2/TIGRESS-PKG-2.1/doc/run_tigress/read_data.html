@@ -1,0 +1,144 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of read_data</title>
+  <meta name="keywords" content="read_data">
+  <meta name="description" content="Transforms data from files into a structure">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">run_tigress</a> &gt; read_data.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for run_tigress&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>read_data
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Transforms data from files into a structure</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function data=read_data(datapath,networkname) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Transforms data from files into a structure
+ 
+ Syntax: data=read_data(networkname)
+ 
+ This program assumes that: 
+  - your data is stored in &lt;datapath&gt;/
+  - all files within this folder begin with &lt;networkname&gt;
+  - this folder contains at least '&lt;networkname&gt;_expression_data.tsv'
+  - optionally, it may also contain '&lt;neworkname&gt;_transcription_factors.tsv', 
+  '&lt;networkname&gt;_gold_standard.tsv' and AUPR/AUROC distributions (see, e.g. DREAM5 data)
+  
+
+ REQUIRED INPUTS: 
+  - networkname: string containing the name of your network
+
+ See also: <a href="tigress_full.html" class="code" title="function [edges scores freq]=tigress_full(dataname,varargin)">tigress_full</a>
+
+ Anne-Claire Haury, 2012</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="tigress_full.html" class="code" title="function [edges scores freq]=tigress_full(dataname,varargin)">tigress_full</a>	Complete TIGRESS GRN inference method.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function data=read_data(datapath,networkname)</a>
+0002 
+0003 <span class="comment">% Transforms data from files into a structure</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Syntax: data=read_data(networkname)</span>
+0006 <span class="comment">%</span>
+0007 <span class="comment">% This program assumes that:</span>
+0008 <span class="comment">%  - your data is stored in &lt;datapath&gt;/</span>
+0009 <span class="comment">%  - all files within this folder begin with &lt;networkname&gt;</span>
+0010 <span class="comment">%  - this folder contains at least '&lt;networkname&gt;_expression_data.tsv'</span>
+0011 <span class="comment">%  - optionally, it may also contain '&lt;neworkname&gt;_transcription_factors.tsv',</span>
+0012 <span class="comment">%  '&lt;networkname&gt;_gold_standard.tsv' and AUPR/AUROC distributions (see, e.g. DREAM5 data)</span>
+0013 <span class="comment">%</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% REQUIRED INPUTS:</span>
+0016 <span class="comment">%  - networkname: string containing the name of your network</span>
+0017 <span class="comment">%</span>
+0018 <span class="comment">% See also: tigress_full</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Anne-Claire Haury, 2012</span>
+0021 
+0022 fprintf(<span class="string">'Looking for data related to %s ... \n'</span>, networkname)
+0023 
+0024 <span class="comment">%% Get all files</span>
+0025 
+0026 expression_file=[datapath,<span class="string">'/'</span>,networkname,<span class="string">'_expression_data.tsv'</span>];
+0027 
+0028 fprintf(<span class="string">'Getting expression data ... \n'</span>)
+0029 
+0030 A=importdata(expression_file); 
+0031 
+0032 genenames=A.textdata;
+0033 expdata=A.data;
+0034 
+0035 <span class="comment">%% Set data structure</span>
+0036 data.expdata=expdata;
+0037 data.genenames=genenames';
+0038 
+0039 
+0040 <span class="comment">%% Add optional fields</span>
+0041 GSname=[datapath,networkname,<span class="string">'_gold_standard.tsv'</span>];
+0042 pdfAUROCname=[datapath,networkname,<span class="string">'_AUROC.mat'</span>];
+0043 pdfAUPRname=[datapath,networkname,<span class="string">'_AUPR.mat'</span>];
+0044 tflist_file=[datapath,networkname,<span class="string">'_transcription_factors.tsv'</span>];
+0045 <span class="keyword">if</span> exist(tflist_file,<span class="string">'file'</span>)
+0046    fprintf(<span class="string">'Getting transcription factors ... \n'</span>)
+0047    tflist=importdata(tflist_file);
+0048    data.tflist=tflist;
+0049    data.tf_index=find(ismember(data.tflist,data.genenames));
+0050 <span class="keyword">else</span>
+0051    fprintf(<span class="string">'Generating transcription factors : all genes ... \n'</span>)
+0052    data.tflist=genenames;
+0053    data.tf_index=1:length(genenames);
+0054 <span class="keyword">end</span>
+0055 <span class="keyword">if</span> exist(GSname,<span class="string">'file'</span>)
+0056     fprintf(<span class="string">'Getting gold standard data ... \n'</span>)
+0057     B = importdata(GSname);     
+0058     idx=logical(B.data);
+0059     tmp=B.data(idx);
+0060     GS=B.textdata(idx,:);
+0061     GSnum=zeros(length(tmp),3);
+0062     GSnum(:,3)=tmp;
+0063     N = size(GS,1);
+0064     C = char(GS);
+0065     D = C(:,2:end);
+0066     F = str2num(D);
+0067     GSnum(:,1:2) = [ F(1:N) F(N+1:2*N) ];
+0068     data.gold_edges=GS;
+0069     data.gold_edges_num=GSnum;
+0070 <span class="keyword">end</span>
+0071 <span class="keyword">if</span> exist(pdfAUROCname,<span class="string">'file'</span>)
+0072     fprintf(<span class="string">'Getting AUROC data... \n'</span>)
+0073     pdf_auroc=load(pdfAUROCname);
+0074     data.pdf_auroc=pdf_auroc;
+0075 <span class="keyword">end</span>
+0076 <span class="keyword">if</span> exist(pdfAUPRname,<span class="string">'file'</span>)
+0077     fprintf(<span class="string">'Getting AUPR data ... \n'</span>)
+0078     pdf_aupr=load(pdfAUPRname);
+0079     data.pdf_aupr=pdf_aupr;
+0080 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 24-Sep-2012 22:50:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

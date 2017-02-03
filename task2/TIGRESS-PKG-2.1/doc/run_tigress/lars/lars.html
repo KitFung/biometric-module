@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of lars</title>
+  <meta name="keywords" content="lars">
+  <meta name="description" content="Least Angle Regression (LAR) algorithm.">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../../index.html">Home</a> &gt;  <a href="../index.html">run_tigress</a> &gt; <a href="index.html">lars</a> &gt; lars.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../../index.html"><img alt="<" border="0" src="../../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for run_tigress/lars&nbsp;<img alt=">" border="0" src="../../right.png"></a></td></tr></table>-->
+
+<h1>lars
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>Least Angle Regression (LAR) algorithm.</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="box"><strong>function [beta, A, mu, C, c, gamma] = lars(X, Y, option,L) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Least Angle Regression (LAR) algorithm.
+ Ref: Efron et. al. (2004) Least angle regression. Annals of Statistics.
+ option = 'lar' implements the vanilla LAR algorithm (default);
+ option = 'lasso' solves the lasso path with a modified LAR algorithm.
+ t: a vector of increasing positive real numbers. If given, LARS stops and 
+ returns the solution at t.
+
+ Output:
+ A: a sequence of indices that indicate the order of variable inclusions;
+ beta: history of estimated LARS coefficients;
+ mu: history of estimated mean vector;
+ C: history of maximal current absolute corrrelations;
+ c: history of current corrrelations;
+ gamma: history of LARS step size.
+ Note: history is traced by rows. If t is given, beta is just the
+ estimated coefficient vector at the constraint ||beta||_1 = t.
+
+ Remarks:
+ 1. LARS is originally proposed to estimate a sparse coefficient vector in
+ a noisy over-determined linear system. LARS outputs estimates for all
+ shrinkage/constraint parameters (homotopy).
+
+ 2. LARS is well suited for Basis Pursuit (BP) purpose in the real case. This lars function
+ automatically terminates when the current correlations for inactive set are
+ all zeros. The recovered coefficient vector is the last column of beta 
+ with the *lasso* option. Hence, this function provides a fast and 
+ efficient solution for the ell_1 minimization problem. 
+ Ref: Donoho and Tsaig (2006). Fast solution of ell_1 norm minimization problems when the solution may be sparse.</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="minplus.html" class="code" title="function [m, I, J] = minplus(X)">minplus</a>	Find the minimum and its index over the (strictly) positive part of X matrix</li><li><a href="normalize.html" class="code" title="function normmat=normalize(inpmat)">normalize</a>	</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../../matlabicon.gif)">
+<li><a href="../../run_tigress/stability_selection.html" class="code" title="function F=stability_selection(x,y,ntf,predictorTF,R,L,alpha,method)">stability_selection</a>	Stability selection inspired by Meinshausen & Buehlmann, 2009</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [beta, A, mu, C, c, gamma] = lars(X, Y, option,L)</a>
+0002 
+0003 <span class="comment">% Least Angle Regression (LAR) algorithm.</span>
+0004 <span class="comment">% Ref: Efron et. al. (2004) Least angle regression. Annals of Statistics.</span>
+0005 <span class="comment">% option = 'lar' implements the vanilla LAR algorithm (default);</span>
+0006 <span class="comment">% option = 'lasso' solves the lasso path with a modified LAR algorithm.</span>
+0007 <span class="comment">% t: a vector of increasing positive real numbers. If given, LARS stops and</span>
+0008 <span class="comment">% returns the solution at t.</span>
+0009 <span class="comment">%</span>
+0010 <span class="comment">% Output:</span>
+0011 <span class="comment">% A: a sequence of indices that indicate the order of variable inclusions;</span>
+0012 <span class="comment">% beta: history of estimated LARS coefficients;</span>
+0013 <span class="comment">% mu: history of estimated mean vector;</span>
+0014 <span class="comment">% C: history of maximal current absolute corrrelations;</span>
+0015 <span class="comment">% c: history of current corrrelations;</span>
+0016 <span class="comment">% gamma: history of LARS step size.</span>
+0017 <span class="comment">% Note: history is traced by rows. If t is given, beta is just the</span>
+0018 <span class="comment">% estimated coefficient vector at the constraint ||beta||_1 = t.</span>
+0019 <span class="comment">%</span>
+0020 <span class="comment">% Remarks:</span>
+0021 <span class="comment">% 1. LARS is originally proposed to estimate a sparse coefficient vector in</span>
+0022 <span class="comment">% a noisy over-determined linear system. LARS outputs estimates for all</span>
+0023 <span class="comment">% shrinkage/constraint parameters (homotopy).</span>
+0024 <span class="comment">%</span>
+0025 <span class="comment">% 2. LARS is well suited for Basis Pursuit (BP) purpose in the real case. This lars function</span>
+0026 <span class="comment">% automatically terminates when the current correlations for inactive set are</span>
+0027 <span class="comment">% all zeros. The recovered coefficient vector is the last column of beta</span>
+0028 <span class="comment">% with the *lasso* option. Hence, this function provides a fast and</span>
+0029 <span class="comment">% efficient solution for the ell_1 minimization problem.</span>
+0030 <span class="comment">% Ref: Donoho and Tsaig (2006). Fast solution of ell_1 norm minimization problems when the solution may be sparse.</span>
+0031 
+0032 
+0033 <span class="keyword">if</span> nargin &lt; 3, option = <span class="string">'lar'</span>; <span class="keyword">end</span>
+0034 
+0035 <span class="keyword">if</span> strcmpi(option, <span class="string">'lasso'</span>) 
+0036     lasso = 1; 
+0037 <span class="keyword">else</span>
+0038     lasso = 0;
+0039 <span class="keyword">end</span>
+0040 
+0041 eps = 1e-10;    <span class="comment">% Effective zero</span>
+0042 
+0043 [n,p] = size(X);
+0044 X = <a href="normalize.html" class="code" title="function normmat=normalize(inpmat)">normalize</a>(X);
+0045 Y = Y-mean(Y);
+0046 <span class="comment">%m = min(p,n-1); % Maximal number of variables in the final active set</span>
+0047 t=Inf;
+0048 T = length(t);
+0049 
+0050 beta = zeros(1,p);
+0051 mu = zeros(n,1);    <span class="comment">% Mean vector</span>
+0052 gamma = []; <span class="comment">% LARS step lengths</span>
+0053 A = [];
+0054 Ac = 1:p;
+0055 nVars = 0;
+0056 signOK = 1;
+0057 i = 0;
+0058 mu_old = zeros(n,1);
+0059 t_prev = 0;
+0060 beta_t = zeros(T,p);
+0061 ii = 1;
+0062 tt = t;
+0063 gamma=zeros(L,1);
+0064 <span class="comment">% LARS loop</span>
+0065 <span class="keyword">while</span> nVars &lt; L,
+0066     i = i+1;
+0067     c = X'*(Y-mu);  <span class="comment">% Current correlation</span>
+0068     C = max(abs(c));    <span class="comment">% Maximal current absolute correlation</span>
+0069     <span class="keyword">if</span> C &lt; eps || isempty(t), <span class="keyword">break</span>; <span class="keyword">end</span>    <span class="comment">% Early stopping criteria</span>
+0070     <span class="keyword">if</span> 1 == i, addVar = find(C==abs(c)); <span class="keyword">end</span>
+0071     <span class="keyword">if</span> signOK,
+0072         A = [A,addVar]; <span class="comment">% Add one variable to active set</span>
+0073         nVars = nVars+1;
+0074     <span class="keyword">end</span>
+0075     s_A = sign(c(A));
+0076     Ac = setdiff(1:p,A);    <span class="comment">% Inactive set</span>
+0077     nZeros = length(Ac);
+0078     X_A = X(:,A);
+0079     G_A = X_A'*X_A; <span class="comment">% Gram matrix</span>
+0080     invG_A = inv(G_A);      <span class="comment">% Improve numeric stability by using Cholesky or (economical) QR decompostion, depending on if G_A or X_A is given</span>
+0081     L_A = 1/sqrt(s_A'*invG_A*s_A);
+0082     w_A = L_A*invG_A*s_A;   <span class="comment">% Coefficients of equiangular vector u_A</span>
+0083     u_A = X_A*w_A;  <span class="comment">% Equiangular vector</span>
+0084     a = X'*u_A; <span class="comment">% Angles between x_j and u_A</span>
+0085     beta_tmp = zeros(p,1);
+0086     gammaTest = zeros(nZeros,2);
+0087     <span class="keyword">if</span> nVars == L,
+0088         gamma(i) = C/L_A;   <span class="comment">% Move to the least squares projection</span>
+0089     <span class="keyword">else</span>
+0090         <span class="keyword">for</span> j = 1:nZeros,
+0091             jj = Ac(j);
+0092             gammaTest(j,:) = [(C-c(jj))/(L_A-a(jj)), (C+c(jj))/(L_A+a(jj))];
+0093         <span class="keyword">end</span>
+0094         [gamma(i) min_i min_j] = <a href="minplus.html" class="code" title="function [m, I, J] = minplus(X)">minplus</a>(gammaTest);
+0095         addVar = unique(Ac(min_i));
+0096     <span class="keyword">end</span>
+0097     beta_tmp(A) = beta(i,A)' + gamma(i)*w_A;    <span class="comment">% Update coefficient estimates</span>
+0098     <span class="comment">% Check the sign feasibility of lasso</span>
+0099     <span class="keyword">if</span> lasso,
+0100         signOK = 1;
+0101         gammaTest = -beta(i,A)'./w_A;
+0102         [gamma2 min_i min_j] = <a href="minplus.html" class="code" title="function [m, I, J] = minplus(X)">minplus</a>(gammaTest);
+0103         <span class="keyword">if</span> gamma2 &lt; gamma(i),   <span class="comment">% The case when sign consistency gets violated</span>
+0104             gamma(i) = gamma2;
+0105             beta_tmp(A) = beta(i,A)' + gamma(i)*w_A;    <span class="comment">% Correct the coefficients</span>
+0106             beta_tmp(A(unique(min_i))) = 0;
+0107             A(unique(min_i)) = [];  <span class="comment">% Delete the zero-crossing variable (keep the ordering)</span>
+0108             nVars = nVars-1;
+0109             signOK = 0;
+0110         <span class="keyword">end</span>
+0111     <span class="keyword">end</span>
+0112     <span class="keyword">if</span> Inf ~= t(1),
+0113         t_now = norm(beta_tmp(A),1);
+0114         <span class="keyword">if</span> t_prev &lt; t(1) &amp;&amp; t_now &gt;= t(1),
+0115             beta_t(ii,A) = beta(i,A) + L_A*(t(1)-t_prev)*w_A';    <span class="comment">% Compute coefficient estimates corresponding to a specific t</span>
+0116             t(1) = [];
+0117             ii = ii+1;
+0118         <span class="keyword">end</span>
+0119         t_prev = t_now;
+0120     <span class="keyword">end</span>
+0121     mu = mu_old + gamma(i)*u_A; <span class="comment">% Update mean vector</span>
+0122     mu_old = mu;
+0123     beta = [beta; beta_tmp'];
+0124 <span class="keyword">end</span>
+0125 
+0126 <span class="keyword">if</span> 1 &lt; ii,
+0127     noCons = (tt &gt; norm(beta_tmp,1));
+0128     <span class="keyword">if</span> 0 &lt; sum(noCons),
+0129         beta_t(noCons,:) = repmat(beta_tmp',sum(noCons),1);
+0130     <span class="keyword">end</span>
+0131     beta = beta_t;
+0132 <span class="keyword">end</span>
+0133</pre></div>
+<hr><address>Generated on Mon 24-Sep-2012 22:50:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

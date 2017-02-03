@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of score_edges</title>
+  <meta name="keywords" content="score_edges">
+  <meta name="description" content="Transforms frequencies into scores">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">run_tigress</a> &gt; score_edges.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for run_tigress&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>score_edges
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>Transforms frequencies into scores</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function scores = score_edges(freq,varargin) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> Transforms frequencies into scores
+ 
+ Syntax 1: scores = score_edges(freq)
+ Returns a matrix of scores given a frequency matrix freq. All options are
+ set to default values
+
+ Syntax 2: scores = score_edges(freq,'option',option_value,...)
+ Same with optional settings set by user. See below.
+ 
+ REQUIRED INPUT:
+ - freq: the frequency matrix obtained by running tigress.
+ 
+ OPTIONAL INPUTS: 
+ - method: either 'area' (default) or 'original' (see paper)
+ - L: number of LARS steps to consider (default=max_possible)
+ 
+ OUTPUT:
+ - scores: a ntf*ntg matrix of scores (i.e. probabilities)
+ 
+ Example:
+ load data1
+ freq=tigress(data1)
+ scores=score_edges(data1,'method','area','L',5)
+ 
+ See also: <a href="tigress.html" class="code" title="function freq=tigress(data,varargin)">tigress</a>, <a href="predict_network.html" class="code" title="function edges=predict_network(scores,tf_index,varargin)">predict_network</a>
+
+ Anne-Claire Haury, 2012</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+</ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="demo_tigress.html" class="code" title="">demo_tigress</a>	Demo for TIGRESS</li><li><a href="tigress_full.html" class="code" title="function [edges scores freq]=tigress_full(dataname,varargin)">tigress_full</a>	Complete TIGRESS GRN inference method.</li></ul>
+<!-- crossreference -->
+
+
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function scores = score_edges(freq,varargin)</a>
+0002 
+0003 <span class="comment">% Transforms frequencies into scores</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Syntax 1: scores = score_edges(freq)</span>
+0006 <span class="comment">% Returns a matrix of scores given a frequency matrix freq. All options are</span>
+0007 <span class="comment">% set to default values</span>
+0008 <span class="comment">%</span>
+0009 <span class="comment">% Syntax 2: scores = score_edges(freq,'option',option_value,...)</span>
+0010 <span class="comment">% Same with optional settings set by user. See below.</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% REQUIRED INPUT:</span>
+0013 <span class="comment">% - freq: the frequency matrix obtained by running tigress.</span>
+0014 <span class="comment">%</span>
+0015 <span class="comment">% OPTIONAL INPUTS:</span>
+0016 <span class="comment">% - method: either 'area' (default) or 'original' (see paper)</span>
+0017 <span class="comment">% - L: number of LARS steps to consider (default=max_possible)</span>
+0018 <span class="comment">%</span>
+0019 <span class="comment">% OUTPUT:</span>
+0020 <span class="comment">% - scores: a ntf*ntg matrix of scores (i.e. probabilities)</span>
+0021 <span class="comment">%</span>
+0022 <span class="comment">% Example:</span>
+0023 <span class="comment">% load data1</span>
+0024 <span class="comment">% freq=tigress(data1)</span>
+0025 <span class="comment">% scores=score_edges(data1,'method','area','L',5)</span>
+0026 <span class="comment">%</span>
+0027 <span class="comment">% See also: tigress, predict_network</span>
+0028 <span class="comment">%</span>
+0029 <span class="comment">% Anne-Claire Haury, 2012</span>
+0030 
+0031 <span class="comment">%% Parse arguments</span>
+0032 p = inputParser;   <span class="comment">% Create an instance of the class.</span>
+0033 p.addRequired(<span class="string">'freq'</span>, @isfloat);
+0034 p.addParamValue(<span class="string">'method'</span>,<span class="string">'area'</span>,@(x)any(strcmpi(x,{<span class="string">'area'</span>,<span class="string">'original'</span>})));
+0035 [n nsteps ng]=size(freq);
+0036 p.addParamValue(<span class="string">'L'</span>, nsteps, @(x)x&lt;nsteps+1);
+0037 p.parse(freq,varargin{:})
+0038 
+0039 <span class="comment">%% Show which arguments were not specified in the call.</span>
+0040 disp(<span class="string">' '</span>) 
+0041 <span class="keyword">for</span> k=1:numel(p.UsingDefaults)
+0042    field = char(p.UsingDefaults(k));
+0043    value = num2str(p.Results.(field));
+0044    <span class="keyword">if</span> isempty(value)   
+0045        value = <span class="string">'[]'</span>;   
+0046    <span class="keyword">end</span>
+0047    fprintf(<span class="string">'   ''%s''    defaults to %s \n'</span>, field, value)
+0048 <span class="keyword">end</span>
+0049 
+0050 <span class="comment">%% Restrain freq to the first steps we want to look at</span>
+0051 freq=freq(:,1:p.Results.L,:);
+0052 
+0053 <span class="comment">%% Now apply any of 'original','area', or 'warea' method (can add new ones!)</span>
+0054 <span class="keyword">switch</span> p.Results.method
+0055     <span class="keyword">case</span> <span class="string">'original'</span>
+0056         scores=reshape(max(freq,[],2),n,ng);
+0057     <span class="keyword">case</span> <span class="string">'area'</span> <span class="comment">% triangles approx. of the area</span>
+0058         scores=reshape((zeros(n,1,ng)+freq(:,1,:))/2+sum((freq(:,2:p.Results.L,:)+freq(:,1:p.Results.L-1,:))/2,2),n,ng);
+0059         scores=1/(p.Results.L-.5)*scores;
+0060 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Mon 24-Sep-2012 22:50:56 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>
