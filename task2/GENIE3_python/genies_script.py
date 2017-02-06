@@ -10,6 +10,8 @@ f.close()
 gene_names = gene_names.rstrip('\n').split('\t')
 (VIM, prediction_score, treeEstimators) = GENIE3(data)
 
-with open("regulators.csv", "wb") as f:
+get_link_list(VIM, gene_names=gene_names, file_name='ranking.txt')
+
+with open("VIM.csv", "wb") as f:
     writer = csv.writer(f)
     writer.writerows(VIM)
