@@ -34,10 +34,10 @@ differentialExpressedGene <- function(countTable, condition) {
   goodRow <- resSig[complete.cases(resSig), ]
   geneSig <- rownames(goodRow)
 
-  regulateDirection <- as.matrix(res$log2FoldChange)
-  regulateDirection[regulateDirection > 0] <- 1
-  regulateDirection[regulateDirection < 1] <- -1
-  rownames(regulateDirection) <- rownames(res)
+  observedRegulation <- as.matrix(res$log2FoldChange)
+  observedRegulation[observedRegulation > 0] <- 1
+  observedRegulation[observedRegulation < 1] <- -1
+  rownames(observedRegulation) <- rownames(res)
 
   if(dim(goodRow)[1] == 0) {
     resSig <- res[ res$pval < 0.1, ]
@@ -45,13 +45,13 @@ differentialExpressedGene <- function(countTable, condition) {
     geneSig <- rownames(goodRow)
   }
 
-  return (list(cds=cds, res=res, geneSig=geneSig, resSig=resSig, regulateDirection=regulateDirection))
+  return (list(cds=cds, res=res, geneSig=geneSig, resSig=resSig, observedRegulation=observedRegulation))
 }
 
 diffRes = differentialExpressedGene(countTable, condition)
 write.csv(diffRes$geneSig, file = "diffRes.csv")
-write.csv(diffRes$regulateDirection, file="regulateDirection.csv")
-
+write.csv(diffRes$observedRegulation, file="observedRegulation.csv")
+countTable
 condition <- as.matrix(condition)
 rownames(condition) <- colnames(metaMat)
 write.csv(condition, file = "condition.csv")
