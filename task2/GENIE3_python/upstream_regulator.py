@@ -1,3 +1,5 @@
+import math
+import csv
 import pandas as pd
 import scipy.stats as stats
 
@@ -27,20 +29,6 @@ def read_network(fname, gene_names):
 
 
 VIM = read_network(fname, gene_names)
-
-
-# # condition(fname):
-# fname = '../condition.csv'
-#
-#
-# def read_condition(fname):
-#     condition = pd.read_csv(fname, sep=',', index_col=0)
-#     condition.columns = ['cond']
-#     return condition
-#
-#
-# condition = read_condition(fname)
-
 
 # Observed gene regulation
 # 1 = up
@@ -132,20 +120,6 @@ TR2TGs = form_TR2TGs(TRs, VIM)
 TRs_after_pvalue = filter_TR_by_pvalue(TRs, TR2TGs, VIM, sub_sampling_genes)
 
 
-# z-score
-def cal_zscore(TRs, TR2TGs, weight, predicted_state):
-    z_scores = {}
-    for TR in TRs:
-        z_scores[TR] = 0
-        TGs = TR2TGs[TR]
-        for TG in TGs:
-            z_scores[TR] += weight.loc[TR, TG] * predicted_state.loc[TR, TG]
-    return z_scores
-
-
-z_scores = cal_zscore(TRs, TR2TGs, VIM, predicted_state)
-
-
 # bias = bias_data * bias_TR
 def cal_bias_data(observed_regulation):
     N_up = observed_regulation[observed_regulation > 0].count()['cond']
@@ -178,3 +152,54 @@ def filter_TR_by_bias(TRs, bias):
 bias_data = cal_bias_data(observed_regulation)
 bias = cal_bias(TRs_after_pvalue, TR2TGs,  direction, bias_data)
 TRs_after_bias = filter_TR_by_bias(TRs_after_pvalue, bias)
+
+
+# z-score
+def cal_zscore(TRs, TR2TGs, weight, predicted_state):
+    z_scores = []
+    for TR in TRs:
+        z_score = 0
+        TGs = TR2TGs[TR]
+        square_sum = 0
+        for TG in TGs:
+            z_score += weight.loc[TR, TG] * predicted_state.loc[TR, TG]
+            square_sum += weight.loc[TR, TG] ** 2
+        z_score /= math.sqrt(square_sum)
+        z_scores.append((TR, z_score))
+    z_scores.sort(key=lambda t: t[1], reverse=True)
+    return z_scores
+
+
+z_scores = cal_zscore(TRs_after_bias, TR2TGs, VIM, predicted_state)
+
+
+# bias-corrected z-score
+def cal_bias_corrected_zscore(TRs, TR2TGs, weight, predicted_state, bias):
+    z_scores = []
+    for TR in TRs:
+        z_score = 0
+        TGs = TR2TGs[TR]
+        square_sum = 0
+        for TG in TGs:
+            tmp = predicted_state.loc[TR, TG] - bias[TR]
+            z_score += weight.loc[TR, TG] * tmp
+            square_sum += weight.loc[TR, TG] ** 2
+        z_score /= math.sqrt(square_sum)
+        z_scores.append((TR, z_score))
+    z_scores.sort(key=lambda t: t[1], reverse=True)
+    return z_scores
+
+
+bias_corrected_zscore = cal_bias_corrected_zscore(
+    TRs_after_bias, TR2TGs, VIM, predicted_state, bias)
+
+
+save_fname = 'z_scores.csv'
+with open(save_fname, "wb") as f:
+    writer = csv.writer(f)
+    writer.writerows(z_scores)
+
+save_fname = 'bias_corrected_zscore.csv'
+with open(save_fname, "wb") as f:
+    writer = csv.writer(f)
+    writer.writerows(bias_corrected_zscore)
